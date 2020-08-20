@@ -6,7 +6,7 @@
 # Datatypes (KEYWORD1)
 #######################################
 
-TroykaButton 	KEYWORD1
+TroykaButton    KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
@@ -14,12 +14,12 @@ TroykaButton 	KEYWORD1
 
 reinit          KEYWORD2
 setTimeHold     KEYWORD2
-begin			KEYWORD2
-read 			KEYWORD2
-justPressed		KEYWORD2
-justReleased	KEYWORD2
+begin           KEYWORD2
+read            KEYWORD2
+justPressed     KEYWORD2
+justReleased    KEYWORD2
 justHeld        KEYWORD2
 isPressed       KEYWORD2
 isReleased      KEYWORD2
-isHold 			KEYWORD2
-isClick			KEYWORD2
+isHold          KEYWORD2
+isClick         KEYWORD2
