@@ -166,7 +166,7 @@ private: // данные состояния
   // запомненное электрическое состояние пина (с поправкой на _pullUP)
   bool _pinState;
   // millis(), когла было прочитано и сохранено _pinState
-  unsigned long _tmPinState;
+  unsigned long _miPinState;
   // true, если течет временной интервал подавления дребезга, иначе false
   bool _isDebounceTimeoutActive;
   // текущее "софтовое" состояние кнопки
@@ -177,10 +177,10 @@ private: // данные состояния
   //  один из justXxx() методов или isClick()
   bool _isStateDirty;
   // millis() последнего обновления _state
-  // нужно для таймаута удержания, мы не можем использовать _tmPinState
+  // нужно для таймаута удержания, мы не можем использовать _miPinState
   //  для него, ибо тогда ложное кратковременное дребезжащее размыкание нажатой кнопки
   //  сбросит логику timeHold
-  unsigned long _tmState;
+  unsigned long _miState;
 private: // внутренности
   // внутренний движок под конструктором и reinit()
   // инициализирует все поля состояния
@@ -195,14 +195,14 @@ private: // внутренности
   // запоминает состояние пина правильным образом
   void _updatePinState(bool newPinState) {
     _pinState = newPinState;
-    _tmPinState = millis();
+    _miPinState = millis();
   }
   // oбновляет _state правильным образом
   void _updateState(_State newState) {
     _prevState = _state;
     _state = newState;
     _isStateDirty = true;
-    _tmState = millis();
+    _miState = millis();
   }
 };
 

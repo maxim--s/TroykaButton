@@ -32,7 +32,7 @@ void TroykaButton::read() {
   //  (для этого не нужно щупать пин)
   // если после подавления дребезга кнопка окажется отпущенной -
   //  состояние обновится еще раз ниже
-  if (_state == stPressed && millis() - _tmState >= _timeHold)
+  if (_state == stPressed && millis() - _miState >= _timeHold)
     // после этого _state более не stPressed, второй раз код не выполнится
     _updateState(stLongHold);
   // щупаем пин
@@ -45,7 +45,7 @@ void TroykaButton::read() {
     _updatePinState(currentPinState);
   } else {
     // пин не изменился
-    if (_isDebounceTimeoutActive && millis() - _tmPinState >= DEBOUNCE_TIME) {
+    if (_isDebounceTimeoutActive && millis() - _miPinState >= DEBOUNCE_TIME) {
       // подавление дребезга активно, а пин не менялся в течение всего таймаута
       //  (если бы он менялся, код выше рестартнул бы таймаут)
       // _pinState теперь суть окончательное состояние пина
@@ -65,14 +65,14 @@ void TroykaButton::read() {
       //      а следом justPressed() представит ложное размыкание как второе нажатие
       //          (без промежуточного отпускания)
       //          БАГ
-      //  - кроме того, _updateState() рестартнет _tmState,
+      //  - кроме того, _updateState() рестартнет _miState,
       //      и ложное размыкание рестартнет таймаут timeHold
       //          ВТОРОЙ БАГ
       //  - примерно то же самое произойдет и в случае (хотя и малореальном),
       //      если отпущенная кнопка кратковременно замкнулась
       //      (из-за краткого КЗ в проводах на макетке и др)
       //  - а потому - switch(), избавляющий от _updateState()
-      //      (взвода _isStateDirty и рестарта _tmState)
+      //      (взвода _isStateDirty и рестарта _miState)
       //      в этих сценариях
       //  - если вкратце: switch() отрабатывает сценарий,
       //     когда пин подребезжал-подребезжал, и вернулся в старое состояние
@@ -133,7 +133,7 @@ void TroykaButton::_resetObject() {
   _pinState = false;
   // поскольку мы устанавливаем _isDebounceTimeoutActive в false,
   //  по факту безразлично, как инициализировать это поле
-  _tmPinState = 0;
+  _miPinState = 0;
   // таймаут активируется первый раз при первом же чтении взведенного пина в read()
   _isDebounceTimeoutActive = false;
   // при инициализации считаем, что кнопка не нажата
@@ -145,7 +145,7 @@ void TroykaButton::_resetObject() {
   _isStateDirty = false;
   // поскольку мы устанавливаем _state в stReleased,
   //  по факту безразлично, как инициализировать это поле
-  _tmState = 0;
+  _miState = 0;
 }
 
 // единый, для экономии места под код, внутренний движок под всеми justXxx()
