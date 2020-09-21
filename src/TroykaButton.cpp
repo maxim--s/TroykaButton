@@ -9,23 +9,6 @@
 
 #include "TroykaButton.h"
 
-// Тела приватных инлайнов
-
-// != для типа bool есть xor
-bool TroykaButton::_readPinState() const { return (digitalRead(_pin) == HIGH) != _pullUP; }
-
-void TroykaButton::_updatePinState(bool newPinState) {
-  _pinState = newPinState;
-  _tmPinState = millis();
-}
-
-void TroykaButton::_updateState(_State newState) {
-  _prevState = _state;
-  _state = newState;
-  _isStateDirty = true;
-  _tmState = millis();
-}
-
 // API
 
 // pin - номер пина

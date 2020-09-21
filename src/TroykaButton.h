@@ -71,6 +71,16 @@
 //  что нажатое состояние будет держаться меньше 50ms
 #define DEBOUNCE_TIME   15
 
+//
+// поскольку компилятор и toolchain avr-gcc (на котором основана Arduino IDE)
+//  очень активно все инлайнит и использует link-time кодогенерацию для этого
+//  (как Microsoft C/C++ для Win64),
+//  мы объявим здесь инлайны в стандартной манере C++ без форсирования
+// никогда не стоит забывать, что в экосистеме Arduino
+//  мы имеем могучий и "взрослый" компилятор,
+//  хотя target и 8битная и имеет зачастую около 2К памяти
+//
+
 class TroykaButton
 {
 public: // API
@@ -86,14 +96,18 @@ public: // API
   // новый таймаут от setTimeHold() НЕ сбрасывается к старому
   // может быть полезен в случае, если на кнопку временно повесили прерывание,
   //  а затем вернулись к использованию этого класса
-  inline void reinit() __attribute__((always_inline));
+  void reinit() {
+    _resetObject();
+    begin(); // мало ли что успели понаделать с этим пином
+    read(); // для ре-инициализации подавления дребезга
+  }
   // изменяет заданное в конструкторе время (в ms) непрерывного удержания кнопки,
   //  после которого нажатие понимается как долгое удержание
   // может быть полезен в случае, если используется логика нажатий на кнопку
   //  азбукой Морзе (или как-то вроде), как в некоторых брелках автосигнализаций
-  inline void setTimeHold(uint32_t newTimeHold) __attribute__((always_inline));
+  void setTimeHold(uint32_t newTimeHold) { _timeHold = newTimeHold; }
   // инициализация кнопки (для вызова в setup())
-  inline void begin() __attribute__((always_inline));
+  void begin() { pinMode(_pin, INPUT); }
   // считывание данных с кнопки
   // обновляет внутреннее состояние объекта на основании состояния пина
   // для вызова в loop() каждый раз
@@ -105,22 +119,22 @@ public: // API
   //  2) только при первом вызове после того, как выполнилось условие 1)
   // возвращает false во всех остальных случаях
   // можно сказать, что этот метод работает "по фронту"
-  inline bool justPressed() __attribute__((always_inline));
+  bool justPressed() { return _justXxxInner(stPressed); }
   // определение отжатия кнопки
   // то же, что и justPressed(), но условие 1) выглядит как:
   //  "ранее нажатая кнопка была отпущена"
-  inline bool justReleased() __attribute__((always_inline));
+  bool justReleased() { return _justXxxInner(stReleased); }
   // определение удержания кнопки
   // то же, что и justPressed(), но условие 1) выглядит как:
   //  "нажатая кнопка удерживалась нажатой в течение >= timeHold миллисекунд"
-  inline bool justHeld() __attribute__((always_inline));
+  bool justHeld() { return _justXxxInner(stLongHold); }
   // true, если кнопка нажата "здесь и сейчас", иначе false
-  inline bool isPressed() const __attribute__((always_inline));
+  bool isPressed() const { return _state == stPressed || _state == stLongHold; }
   // true, если кнопка отпущена "здесь и сейчас", иначе false
-  inline bool isReleased() const __attribute__((always_inline));
+  bool isReleased() const { return _state == stReleased; }
   // true, если кнопка нажата "здесь и сейчас",
   //  и удерживалась нажатой в течение >= timeHold миллисекунд, иначе false
-  inline bool isHold() const __attribute__((always_inline));
+  bool isHold() const { return _state == stLongHold; }
   // определение короткого клика, если сработал метод isHold() клик не сработает.
   // то же, что и justReleased() (именно так! для совместимости со старым кодом)
   //  с той лишь разницей, что justReleased() вернет true
@@ -174,43 +188,22 @@ private: // внутренности
   // единый, для экономии места под код, внутренний движок под всеми justXxx()
   bool _justXxxInner(_State stateToTest);
   // читает электрическое состояние пина (с поправкой на _pullUP)
-  inline bool _readPinState() const __attribute__((always_inline));
+  bool _readPinState() const {
+    // != для типа bool есть xor
+    return (digitalRead(_pin) == HIGH) != _pullUP;
+  }
   // запоминает состояние пина правильным образом
-  inline void _updatePinState(bool newPinState) __attribute__((always_inline));
+  void _updatePinState(bool newPinState) {
+    _pinState = newPinState;
+    _tmPinState = millis();
+  }
   // oбновляет _state правильным образом
-  inline void _updateState(_State newState) __attribute__((always_inline));
+  void _updateState(_State newState) {
+    _prevState = _state;
+    _state = newState;
+    _isStateDirty = true;
+    _tmState = millis();
+  }
 };
-
-// Тела публичных инлайнов
-
-// они настолько крошечны
-//  (а приватные из них редко зовутся по количеству мест в коде),
-//  что есть реальные основания полагать,
-//  что они меньше прологов-эпилогов функций
-//   (а некоторые ненамного длиннее опкода call)
-// потому, для экономии места под код - инлайны
-// естественно, производительность тоже повышается
-
-void TroykaButton::reinit() {
-  _resetObject();
-  begin(); // мало ли что успели понаделать с этим пином
-  read(); // для ре-инициализации подавления дребезга
-}
-
-void TroykaButton::setTimeHold(uint32_t newTimeHold) { _timeHold = newTimeHold; }
-
-void TroykaButton::begin() { pinMode(_pin, INPUT); }
-
-bool TroykaButton::justPressed() { return _justXxxInner(stPressed); }
-
-bool TroykaButton::justReleased() { return _justXxxInner(stReleased); }
-
-bool TroykaButton::justHeld() { return _justXxxInner(stLongHold); }
-
-bool TroykaButton::isPressed() const { return _state == stPressed || _state == stLongHold; }
-
-bool TroykaButton::isReleased() const { return _state == stReleased; }
-
-bool TroykaButton::isHold() const { return _state == stLongHold; }
 
 #endif // _TROYKA_BUTTON_H_
